@@ -279,12 +279,19 @@ void button_down_event()
 {
     last_wakey_wakey = pdTICKS_TO_MS(xTaskGetTickCount());
     ESP_LOGI(TAG, "button down");
+
+    gpio_set_level(2, 1);
+
 }
 
 void button_up_event(uint64_t hold_ms)
 {
     last_wakey_wakey = pdTICKS_TO_MS(xTaskGetTickCount());
     ESP_LOGI(TAG, "button up %" PRIu64 "ms", hold_ms);
+
+    /* Turn the LED off */
+    gpio_set_level(2, 0);
+
 
     if(requesting)
     {
@@ -382,8 +389,6 @@ static void sleep_callback(TimerHandle_t xTimer)
         return;
     }
 
-    /* Turn the LED off */
-    gpio_set_level(2, 0);
 
     ESP_LOGI(TAG, "Sleeping");
 
@@ -403,8 +408,6 @@ void app_main(void)
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
-
-    gpio_set_level(2, 1);
 
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {

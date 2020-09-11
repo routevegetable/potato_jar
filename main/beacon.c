@@ -171,10 +171,23 @@ static void check_for_next_message(void)
     {
         /* nothing to do */
         advertising_on = false;
+
+        /* Stop bluetooth */
+        ESP_LOGI(TAG, "Shutting down bluetooth");
+        esp_bt_controller_disable();
+        ESP_LOGI(TAG, "Shutdown bluetooth");
         return;
     }
 
     ESP_LOGI(TAG, "Start adv message: %s=%d", messages[msg_index].name, messages[msg_index].value);
+
+
+    if(!advertising_on)
+    {
+        ESP_LOGI(TAG, "Enabling bluetooth");
+        esp_bt_controller_enable(ESP_BT_MODE_BLE);
+        advertising_on = true;
+    }
 
     /* Set up the new data */
     esp_ble_ibeacon_t ibeacon_adv_data;
@@ -186,7 +199,6 @@ static void check_for_next_message(void)
 
     if (status == ESP_OK) {
         esp_ble_gap_config_adv_data_raw((uint8_t*)&ibeacon_adv_data, sizeof(ibeacon_adv_data));
-        advertising_on = true;
     }
     else {
         ESP_LOGE(TAG, "Config iBeacon data failed: %s\n", esp_err_to_name(status));
@@ -210,8 +222,15 @@ void beacon_init(void)
 {
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
     esp_bt_controller_init(&bt_cfg);
-    esp_bt_controller_enable(ESP_BT_MODE_BLE);
 
+    esp_bt_controller_enable(ESP_BT_MODE_BLE);
+    esp_bluedroid_init();
+    esp_bluedroid_enable();
+    esp_err_t status;
+    if ((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
+        ESP_LOGE(TAG, "gap register error: %s", esp_err_to_name(status));
+        return;
+    }
 
     for(int i = 0; i < MAX_MESSAGES; i++)
     {
@@ -220,13 +239,6 @@ void beacon_init(void)
     }
 
     ble_mutex = xSemaphoreCreateMutex();
-    esp_bluedroid_init();
-    esp_bluedroid_enable();
-    esp_err_t status;
-    if ((status = esp_ble_gap_register_callback(esp_gap_cb)) != ESP_OK) {
-        ESP_LOGE(TAG, "gap register error: %s", esp_err_to_name(status));
-        return;
-    }
 
 
     ble_timer = xTimerCreate("BLE Timer",
