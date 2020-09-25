@@ -53,7 +53,8 @@ static void button_isr(void *arg)
 static int button_pushed()
 {
     uint16_t touch_filter_value;
-    touch_pad_read_filtered(TOUCH_PAD_ID, &touch_filter_value);
+    //touch_pad_read_filtered(TOUCH_PAD_ID, &touch_filter_value);
+    touch_pad_read(TOUCH_PAD_ID, &touch_filter_value);
     ESP_LOGI(TAG, "touch pad value: %d", touch_filter_value);
     return touch_filter_value < TOUCH_THRESHOLD;
 }
@@ -137,6 +138,8 @@ void button_init(bool pushed_on)
     {
         /* We were woken by a push! */
         ignore_intr = true;
+        hold_start_ms = pdTICKS_TO_MS(xTaskGetTickCount());
+        last_button_reading = true;
         xTimerReset(debounce_timer, 0);
     }
 
@@ -148,8 +151,11 @@ void button_init(bool pushed_on)
     touch_pad_set_voltage(TOUCH_HVOLT_2V4, TOUCH_LVOLT_0V8, TOUCH_HVOLT_ATTEN_1V);
     touch_pad_config(TOUCH_PAD_ID, TOUCH_THRESHOLD);
     touch_pad_set_trigger_mode(TOUCH_TRIGGER_BELOW);
-    touch_pad_filter_start(10); // 10ms filter
+    //touch_pad_filter_start(20); // 20ms filter
     touch_pad_set_group_mask(1 << TOUCH_PAD_ID, 0, 1 << TOUCH_PAD_ID);
+
+    // Make the sleep cycle long
+    touch_pad_set_meas_time(TOUCH_SLEEP_CYCLE, TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
 
     touch_trigger_src_t src;
     touch_pad_get_trigger_source(&src);
