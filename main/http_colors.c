@@ -192,7 +192,7 @@ static void run_request_task(void *pvParameters)
         brightness = 1;
         break;
     case cs_SOLID_LOW:
-        brightness = 0.3;
+        brightness = 0.25;
         break;
     case cs_OFF:
         brightness = 0;
@@ -327,6 +327,7 @@ void button_hold_event(uint64_t hold_ms)
     {
         /* Hold */
         uint64_t last_update_delta_ms = hold_ms - last_update_hold_ms;
+
         if(!requesting)
         {
             /* Change the color */
@@ -339,30 +340,6 @@ void button_hold_event(uint64_t hold_ms)
 
             hue = (hue + hue_sweep_delta) % 360;
             ESP_LOGI(TAG, "Next hue: %d deg", hue);
-
-            float brightness = 0;
-            switch(color_state)
-            {
-            case cs_SOLID_WHITE:
-            case cs_NORMAL_HIGH:
-            case cs_SOLID_HIGH:
-                brightness = 1;
-                break;
-            case cs_SOLID_LOW:
-                brightness = 0.2;
-                break;
-            case cs_OFF:
-                brightness = 0;
-                break;
-            default:
-                break;
-            }
-
-#ifndef USE_BLUETOOTH
-            http_set_int_var("col", calc_bgr(brightness));
-#else
-            beacon_set_int_var("col", calc_bgr(brightness));
-#endif
 
             run_request();
 
