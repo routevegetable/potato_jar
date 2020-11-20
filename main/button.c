@@ -137,6 +137,7 @@ void button_init(bool pushed_on)
     if(pushed_on)
     {
         /* We were woken by a push! */
+        touch_pad_clear_status();
         ignore_intr = true;
         hold_start_ms = pdTICKS_TO_MS(xTaskGetTickCount());
         last_button_reading = true;

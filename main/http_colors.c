@@ -13,6 +13,7 @@
 #include "freertos/task.h"
 #include "freertos/timers.h"
 #include "driver/gpio.h"
+#include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -369,6 +370,16 @@ static void sleep_callback(TimerHandle_t xTimer)
 
     ESP_LOGI(TAG, "Sleeping");
 
+    // Light sleep mode leaves the timer wakeup enabled
+    // Make sure touchpad wakeup is the only one left on
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    esp_sleep_enable_touchpad_wakeup();
+    rtc_gpio_isolate(GPIO_NUM_0);
+    rtc_gpio_isolate(GPIO_NUM_2);
+
+    // UART
+    rtc_gpio_isolate(GPIO_NUM_1);
+    rtc_gpio_isolate(GPIO_NUM_3);
     esp_deep_sleep_start();
 }
 
@@ -436,8 +447,10 @@ void app_main(void)
                               0, // Timer ID = 0
                               sleep_callback // Callback fn
         );
+
+
     xTimerStart(sleep_timer, 0);
 
-    /* Ready to be worken from light sleep by gpio or touch pad */
+    /* Ready to be woken from light sleep by gpio or touch pad */
     esp_sleep_enable_touchpad_wakeup();
 }
